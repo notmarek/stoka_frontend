@@ -1,0 +1,78 @@
+<div class="bigaf" module>
+  <a class="primary" id="libraryName" hidden><h2>Uploaded files</h2></a>
+  <h2 class="secondary" id="libraryPath" hidden>Have you eaten today?</h2>
+  <span class="loader"></span>
+  <div idg="grid" hidden>
+    <!-- idg is a global id that won't be transformed -->
+    <div class="item">
+      <div style="cursor: pointer;" class="item-title">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 50 50"
+          width="1.5em"
+          height="1.5em"
+        ></svg>
+        <span>-</span>
+      </div>
+      <div class="item-delete">
+        <a href="#" title="Delete?">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 50 50"
+            width="1.5em"
+            height="1.5em"
+            style="color: var(--primary-text-color)"
+          >
+            <use fill="currentColor" href="/content/imgs/Bin.svg%%img"></use>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <script type="module">
+      import { user } from "/content/api_client.js";
+      import { download } from "/content/api.js";
+      import { alertTags } from "/content/main.js";
+      export const run = async () => {
+        let blueprint = document.querySelector("%%grid div.item");
+        let grid = document.getElementByGId("grid");
+        let loader = document.querySelector(".bigaf .loader");
+        let files = (await user.get_files()).data;
+        for (const entry of files.sort(
+          (a, b) => a.title?.toLowerCase() > b.title?.toLowerCase()
+        )) {
+          console.log(entry);
+          let icon = "File.svg";
+          let item = blueprint.cloneNode(true);
+          //   item.href = "";
+          item.querySelector(
+            "svg"
+          ).innerHTML = `<use fill="currentColor" href="/content/imgs/${icon}%%img"></use>`;
+          item.querySelector(".item-title>span").innerText =
+            entry.title.slice(0, 125) +
+            (entry.title.slice(0, 125).length < entry.title.length
+              ? "..."
+              : "");
+          item.title = entry.title;
+
+          item.querySelector(".item-title").onclick = async () => {
+            await download(entry.id);
+          };
+          item.querySelector(".item-delete").onclick = async () => {
+            let res = await user.delete_book(entry.id);
+            if (res.status !== "error") {
+              alertTags("Success!", "Book deleted :)", ["success"], 2);
+            }
+            return false;
+          };
+          grid.appendChild(item);
+        }
+        blueprint.remove();
+        loader.remove();
+        document.getElementById("libraryName").removeAttribute("hidden");
+        document.getElementById("libraryPath").removeAttribute("hidden");
+        grid.removeAttribute("hidden");
+      };
+    </script>
+  </div>
+</div>
